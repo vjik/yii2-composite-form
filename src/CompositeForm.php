@@ -14,15 +14,40 @@ use yii\helpers\ArrayHelper;
 
 abstract class CompositeForm extends Model
 {
+
     /**
      * @var Model[]|array[]
      */
     private $_forms = [];
 
     /**
+     * @var Model[]|array[]
+     */
+    private $_activeForms = [];
+
+    /**
      * @return array of internal forms like ['meta', 'values']
      */
     abstract protected function internalForms();
+
+    protected function internalFormsWhen()
+    {
+        return [];
+    }
+
+    private function checkInternalForm($name)
+    {
+        foreach ($this->internalFormsWhen() as $when) {
+            $names = is_array($when[0]) ? $when[0] : [$when[0]];
+            if (in_array($name, $names, true)) {
+                if (!call_user_func($when[1])) {
+                    return false;
+                }
+            }
+        }
+        $this->_activeForms[$name] = $this->_forms[$name];
+        return true;
+    }
 
     public function load($data, $formName = null)
     {
@@ -45,8 +70,9 @@ abstract class CompositeForm extends Model
         } else {
             $success = parent::validate(null, $clearErrors);
         }
+        $this->_activeForms = [];
         foreach ($this->_forms as $name => $form) {
-            if ($attributeNames === null || array_key_exists($name, $attributeNames) || in_array($name, $attributeNames, true)) {
+            if ($this->checkInternalForm($name) && ($attributeNames === null || array_key_exists($name, $attributeNames) || in_array($name, $attributeNames, true))) {
                 $innerNames = ArrayHelper::getValue($attributeNames, $name);
                 if (is_array($form)) {
                     $success = Model::validateMultiple($form, $innerNames) && $success;
@@ -66,7 +92,7 @@ abstract class CompositeForm extends Model
         if (parent::hasErrors($attribute)) {
             return true;
         }
-        foreach ($this->_forms as $name => $form) {
+        foreach ($this->_activeForms as $name => $form) {
             if (is_array($form)) {
                 foreach ($form as $i => $item) {
                     if ($attribute === null) {
@@ -97,7 +123,7 @@ abstract class CompositeForm extends Model
     public function getErrors($attribute = null)
     {
         $result = parent::getErrors($attribute);
-        foreach ($this->_forms as $name => $form) {
+        foreach ($this->_activeForms as $name => $form) {
             if (is_array($form)) {
                 /** @var array $form */
                 foreach ($form as $i => $item) {
@@ -137,7 +163,7 @@ abstract class CompositeForm extends Model
     public function getFirstErrors()
     {
         $result = parent::getFirstErrors();
-        foreach ($this->_forms as $name => $form) {
+        foreach ($this->_activeForms as $name => $form) {
             if (is_array($form)) {
                 foreach ($form as $i => $item) {
                     foreach ($item->getFirstErrors() as $attr => $error) {
