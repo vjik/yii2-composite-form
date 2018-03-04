@@ -47,6 +47,32 @@ class LoadApiTest extends TestCase
         $this->assertEquals($data['values'][2]['value'], $values[2]->value);
     }
 
+    public function testPartialForm()
+    {
+        $data = [
+            'code' => 'P100',
+            'name' => 'Product Name',
+            'values' => [
+                ['value' => '101'],
+                ['value' => '102'],
+                ['value' => '103'],
+            ],
+        ];
+
+        $form = new ProductForm(3);
+
+        $this->assertTrue($form->load($data, ''));
+
+        $this->assertEquals($data['code'], $form->code);
+        $this->assertEquals($data['name'], $form->name);
+
+        $this->assertCount(3, $values = $form->values);
+
+        $this->assertEquals($data['values'][0]['value'], $values[0]->value);
+        $this->assertEquals($data['values'][1]['value'], $values[1]->value);
+        $this->assertEquals($data['values'][2]['value'], $values[2]->value);
+    }
+
     public function testOnlyInternalForms()
     {
         $data = [

@@ -48,6 +48,33 @@ class LoadActiveFormTest extends TestCase
         $this->assertEquals($data['ValueForm'][1]['value'], $values[1]->value);
         $this->assertEquals($data['ValueForm'][2]['value'], $values[2]->value);
     }
+    public function testPartialForm()
+    {
+        $data = [
+            'MetaForm' => [
+                'title' => 'Meta Title',
+                'description' => 'Meta Description',
+            ],
+            'ValueForm' => [
+                ['value' => '101'],
+                ['value' => '102'],
+                ['value' => '103'],
+            ],
+        ];
+
+        $form = new ProductForm(3);
+
+        $this->assertTrue($form->load($data));
+
+        $this->assertEquals($data['MetaForm']['title'], $form->meta->title);
+        $this->assertEquals($data['MetaForm']['description'], $form->meta->description);
+
+        $this->assertCount(3, $values = $form->values);
+
+        $this->assertEquals($data['ValueForm'][0]['value'], $values[0]->value);
+        $this->assertEquals($data['ValueForm'][1]['value'], $values[1]->value);
+        $this->assertEquals($data['ValueForm'][2]['value'], $values[2]->value);
+    }
 
     public function testOnlyInternalForms()
     {
